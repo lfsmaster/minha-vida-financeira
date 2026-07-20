@@ -120,25 +120,32 @@ def _projected_available(state: Mapping[str, Any]) -> float:
     return projected - _all_open_cards(state)
 
 
+def _goal_base_amount(goal: Mapping[str, Any]) -> float:
+    return _amount((goal or {}).get("baseAmount", (goal or {}).get("current", (goal or {}).get("saved", (goal or {}).get("accumulated", 0)))))
+
 def _goal_current(state: Mapping[str, Any], goal_id: str) -> float:
     goal = next((item for item in _items(state, "goals") if _text(item.get("id")) == _text(goal_id)), None)
-    base = _amount((goal or {}).get("baseAmount", (goal or {}).get("current", (goal or {}).get("saved", (goal or {}).get("accumulated", 0)))))
+    base = _goal_base_amount(goal or {})
     contributions = sum(_amount(transaction.get("amount")) for transaction in _items(state, "transactions") if _kind(transaction) == "allocation" and _normalize(transaction.get("targetType")) == "goal" and _text(transaction.get("targetId")) == _text(goal_id) and _is_paid(transaction))
     return base + contributions
 
+def _investment_base_amount(investment: Mapping[str, Any]) -> float:
+    return _amount((investment or {}).get("baseAmount", (investment or {}).get("current", (investment or {}).get("currentValue", (investment or {}).get("value", (investment or {}).get("balance", (investment or {}).get("amount", 0)))))))
 
 def _investment_current(state: Mapping[str, Any], investment_id: str) -> float:
     investment = next((item for item in _items(state, "investments") if _text(item.get("id")) == _text(investment_id)), None)
-    base = _amount((investment or {}).get("baseAmount", (investment or {}).get("current", (investment or {}).get("currentValue", (investment or {}).get("value", (investment or {}).get("balance", (investment or {}).get("amount", 0)))))))
+    base = _investment_base_amount(investment or {})
     contributions = sum(_amount(transaction.get("amount")) for transaction in _items(state, "transactions") if _kind(transaction) == "allocation" and _normalize(transaction.get("targetType")) == "investment" and _text(transaction.get("targetId")) == _text(investment_id) and _is_paid(transaction))
     return base + contributions
 
+def _debt_original_balance(debt: Mapping[str, Any]) -> float:
+    return _amount(debt.get("originalBalance", debt.get("remaining", debt.get("balance", debt.get("outstanding", debt.get("amount", 0))))))
 
 def _debt_balance(state: Mapping[str, Any], debt_id: str) -> float:
     debt = next((item for item in _items(state, "debts") if _text(item.get("id")) == _text(debt_id)), None)
     if not debt:
         return 0.0
-    original = _amount(debt.get("originalBalance", debt.get("remaining", debt.get("balance", debt.get("outstanding", debt.get("amount", 0))))))
+    original = _debt_original_balance(debt)
     paid = sum(_amount(transaction.get("amount")) for transaction in _items(state, "transactions") if _kind(transaction) == "debt_payment" and _text(transaction.get("debtId")) == _text(debt_id) and _is_paid(transaction))
     return max(0.0, original - paid)
 
@@ -191,11 +198,49 @@ def _category_spending(state: Mapping[str, Any], month: str) -> Dict[str, float]
 
 def _net_worth(state: Mapping[str, Any]) -> Dict[str, float]:
     cash = _total_available(state)
-    goals = sum(_goal_current(state, _text(goal.get("id"))) for goal in _items(state, "goals"))
-    investments = sum(_investment_current(state, _text(investment.get("id"))) for investment in _items(state, "investments"))
+
+    goal_contribs: Dict[str, float] = {}
+    inv_contribs: Dict[str, float] = {}
+    debt_paid: Dict[str, float] = {}
+
+    for tx in _items(state, "transactions"):
+        if not _is_paid(tx):
+            continue
+        kind = _kind(tx)
+        if kind == "allocation":
+            ttype = _normalize(tx.get("targetType"))
+            tid = _text(tx.get("targetId"))
+            amount = _amount(tx.get("amount"))
+            if ttype == "goal":
+                goal_contribs[tid] = goal_contribs.get(tid, 0.0) + amount
+            elif ttype == "investment":
+                inv_contribs[tid] = inv_contribs.get(tid, 0.0) + amount
+        elif kind == "debt_payment":
+            did = _text(tx.get("debtId"))
+            amount = _amount(tx.get("amount"))
+            debt_paid[did] = debt_paid.get(did, 0.0) + amount
+
+    goals = 0.0
+    for goal in _items(state, "goals"):
+        gid = _text(goal.get("id"))
+        base = _goal_base_amount(goal)
+        goals += base + goal_contribs.get(gid, 0.0)
+
+    investments = 0.0
+    for inv in _items(state, "investments"):
+        iid = _text(inv.get("id"))
+        base = _investment_base_amount(inv)
+        investments += base + inv_contribs.get(iid, 0.0)
+
+    debts = 0.0
+    for debt in _items(state, "debts"):
+        did = _text(debt.get("id"))
+        original = _debt_original_balance(debt)
+        debts += max(0.0, original - debt_paid.get(did, 0.0))
+
     assets = sum(_amount(asset.get("value", asset.get("amount"))) for asset in _items(state, "assets"))
-    debts = sum(_debt_balance(state, _text(debt.get("id"))) for debt in _items(state, "debts"))
     liquid = cash + goals + investments - debts
+
     return {"cash": cash, "goals": goals, "investments": investments, "assets": assets, "debts": debts, "liquid": liquid, "total": liquid + assets}
 
 
