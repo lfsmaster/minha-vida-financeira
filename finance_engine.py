@@ -82,8 +82,9 @@ def _movement(transaction: Mapping[str, Any], account_id: str, include_pending: 
     return 0.0
 
 
-def _account_balance(state: Mapping[str, Any], account_id: str, include_pending: bool = False) -> float:
-    account = next((item for item in _items(state, "accounts") if _text(item.get("id")) == _text(account_id)), None)
+def _account_balance(state: Mapping[str, Any], account_id: str, include_pending: bool = False, account: Any = None) -> float:
+    if account is None:
+        account = next((item for item in _items(state, "accounts") if _text(item.get("id")) == _text(account_id)), None)
     if not account:
         return 0.0
     initial = _number(account.get("initial", account.get("initialBalance", account.get("openingBalance", account.get("balanceInitial", 0)))))
@@ -91,7 +92,7 @@ def _account_balance(state: Mapping[str, Any], account_id: str, include_pending:
 
 
 def _balances(state: Mapping[str, Any], include_pending: bool = False) -> Dict[str, float]:
-    return {_text(account.get("id")): _account_balance(state, _text(account.get("id")), include_pending) for account in _items(state, "accounts")}
+    return {_text(account.get("id")): _account_balance(state, _text(account.get("id")), include_pending, account) for account in _items(state, "accounts")}
 
 
 def _total_available(state: Mapping[str, Any]) -> float:
