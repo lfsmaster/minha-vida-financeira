@@ -7,6 +7,7 @@
   const APPLICATION_SCRIPTS = [
     `auth-core-patch.js?v=${VERSION}`,
     `clock-ui.js?v=${VERSION}`,
+    `shared-utils.js?v=${VERSION}`,
     `clock-pages-main.js?v=${VERSION}`,
     `clock-pages-plan.js?v=${VERSION}`,
     `clock-pages-tools.js?v=${VERSION}`,
