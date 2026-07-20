@@ -15,7 +15,11 @@ const App={
  importPreview:[],
  importFileName:'',
  renderers:{},
- actions:{}
+ actions:{},
+ splitCSVLine:function(line,delimiter){const out=[];let current='',quoted=false;for(let i=0;i<line.length;i++){const c=line[i];if(c==='"'){if(quoted&&line[i+1]==='"'){current+='"';i++}else quoted=!quoted}else if(c===delimiter&&!quoted){out.push(current.trim());current=''}else current+=c}out.push(current.trim());return out},
+ normalizeDate:function(value){const s=String(value||'').trim();let m;if((m=s.match(/^(\d{4})[-\/.](\d{1,2})[-\/.](\d{1,2})/)))return`${m[1]}-${m[2].padStart(2,'0')}-${m[3].padStart(2,'0')}`;if((m=s.match(/^(\d{1,2})[\/.-](\d{1,2})[\/.-](\d{2,4})/))){let y=m[3];if(y.length===2)y='20'+y;return`${y}-${m[2].padStart(2,'0')}-${m[1].padStart(2,'0')}`}if((m=s.match(/^(\d{4})(\d{2})(\d{2})/)))return`${m[1]}-${m[2]}-${m[3]}`;return''},
+ parseAmount:function(value){let s=String(value??'').trim().replace(/R\$|\s/g,'');if(!s)return 0;const negative=/^-|\(|\bD\b/i.test(s);s=s.replace(/[()A-Za-z]/g,'');if(s.includes(',')&&s.includes('.'))s=s.lastIndexOf(',')>s.lastIndexOf('.')?s.replace(/\./g,'').replace(',','.'):s.replace(/,/g,'');else if(s.includes(','))s=s.replace(/\./g,'').replace(',','.');const n=Math.abs(Number(s)||0);return negative?-n:n},
+ headerIndex:function(headers,names){const normalized=headers.map(h=>h.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,''));for(const name of names){const index=normalized.findIndex(h=>h.includes(name));if(index>=0)return index}return-1}
 };
 if(!App.routes[App.activePage])App.activePage='dashboard';
 App.state=()=>Core.getState();
