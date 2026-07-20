@@ -1,7 +1,7 @@
 (function () {
   'use strict';
 
-  const VERSION = '8';
+  const VERSION = '9';
   const PYODIDE_VERSION = '314.0.2';
   const PYODIDE_BASE = `https://cdn.jsdelivr.net/pyodide/v${PYODIDE_VERSION}/full/`;
   const APPLICATION_SCRIPTS = [
@@ -46,9 +46,7 @@
   }
 
   async function loadApplication() {
-    for (const source of APPLICATION_SCRIPTS) {
-      await loadScript(source);
-    }
+    for (const source of APPLICATION_SCRIPTS) await loadScript(source);
     window.MVFApp?.render?.();
     window.MVFApp?.renderApp?.();
   }
@@ -57,10 +55,20 @@
     const Core = window.MVFClock;
     if (!Core) throw new Error('O núcleo financeiro não foi carregado.');
 
+    let cachedRevision = null;
+    let cachedStateJson = '';
+    const getStateJson = () => {
+      const state = Core.getState();
+      const revision = state?.meta?.revision ?? 0;
+      if (revision !== cachedRevision) {
+        cachedRevision = revision;
+        cachedStateJson = JSON.stringify(state);
+      }
+      return cachedStateJson;
+    };
+
     const call = (operation, argument = null) => {
-      const stateJson = JSON.stringify(Core.getState());
-      const argumentJson = JSON.stringify(argument);
-      const response = engine.calculate(operation, stateJson, argumentJson);
+      const response = engine.calculate(operation, getStateJson(), JSON.stringify(argument));
       return JSON.parse(String(response));
     };
 
@@ -100,7 +108,6 @@
 
       const pyodide = await window.loadPyodide({ indexURL: PYODIDE_BASE });
       setBoot('Inicializando o motor Python', 'Carregando as regras de cálculo financeiro…');
-
       const response = await fetch(`finance_engine.py?v=${VERSION}`, { cache: 'no-store' });
       if (!response.ok) throw new Error('O arquivo finance_engine.py não foi encontrado.');
       const source = await response.text();
