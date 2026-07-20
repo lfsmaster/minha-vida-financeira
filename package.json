@@ -1,0 +1,25 @@
+{
+  "name": "app",
+  "version": "1.0.0",
+  "description": "Sistema de controle financeiro pessoal com painel responsivo e importação de extratos bancários.",
+  "main": "auth-core-patch.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/lfsmaster/minha-vida-financeira.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/lfsmaster/minha-vida-financeira/issues"
+  },
+  "homepage": "https://github.com/lfsmaster/minha-vida-financeira#readme",
+  "devDependencies": {
+    "jest": "^30.4.2",
+    "jest-environment-jsdom": "^30.4.1"
+  }
+}
