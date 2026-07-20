@@ -259,7 +259,7 @@
     if (signature !== lastDataSignature) scheduleCalculation();
   }, 700);
 
-  window.MVFBalance = { readData, calculate, calculateAccountBalance, update: applyCalculation };
+  window.MVFBalance = { readData, calculate, calculateAccountBalance, calculateMonth, update: applyCalculation };
   attachToFrame();
   scheduleCalculation();
 })();
