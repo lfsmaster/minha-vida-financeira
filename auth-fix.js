@@ -23,9 +23,7 @@
     const database = readJson(DB_KEY, {}) || {};
     database.version = 3;
     database.users = Array.isArray(database.users) ? database.users : [];
-    database.settings = database.settings && typeof database.settings === 'object'
-      ? database.settings
-      : {};
+    database.settings = database.settings && typeof database.settings === 'object' ? database.settings : {};
     database.accounts = Array.isArray(database.accounts) ? database.accounts : [];
     database.transactions = Array.isArray(database.transactions) ? database.transactions : [];
     database.cards = Array.isArray(database.cards) ? database.cards : [];
@@ -58,12 +56,7 @@
           email: emailKey(user.email || user.login),
           password: text(user.password || user.senha)
         };
-        if (
-          normalized.id !== user.id ||
-          normalized.name !== user.name ||
-          normalized.email !== user.email ||
-          normalized.password !== user.password
-        ) changed = true;
+        if (normalized.id !== user.id || normalized.name !== user.name || normalized.email !== user.email || normalized.password !== user.password) changed = true;
         return normalized;
       })
       .filter(user => user.email);
@@ -130,8 +123,8 @@
 
   function startSession(email) {
     localStorage.setItem(SESSION_KEY, emailKey(email));
-    location.replace(`index.html#dashboard`);
-    location.reload();
+    const cleanUrl = `${location.pathname}?login=${Date.now()}#dashboard`;
+    location.replace(cleanUrl);
   }
 
   function login(email, password) {
@@ -163,9 +156,7 @@
     if (!normalizedEmail || !normalizedEmail.includes('@')) throw new Error('Informe um e-mail válido.');
     if (cleanPassword.length < 4) throw new Error('A senha deve ter pelo menos 4 caracteres.');
     if (cleanPassword !== text(confirmation)) throw new Error('As senhas não coincidem.');
-    if (database.users.some(user => emailKey(user.email) === normalizedEmail)) {
-      throw new Error('Este e-mail já está cadastrado. Entre ou redefina a senha local.');
-    }
+    if (database.users.some(user => emailKey(user.email) === normalizedEmail)) throw new Error('Este e-mail já está cadastrado. Entre ou redefina a senha local.');
 
     database.users.push({
       id: `usr_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
@@ -239,9 +230,7 @@
   function repairSession(database) {
     const session = emailKey(localStorage.getItem(SESSION_KEY));
     if (!session) return;
-    if (!database.users.some(user => emailKey(user.email) === session)) {
-      localStorage.removeItem(SESSION_KEY);
-    }
+    if (!database.users.some(user => emailKey(user.email) === session)) localStorage.removeItem(SESSION_KEY);
   }
 
   function initialize() {
@@ -261,12 +250,7 @@
       event.preventDefault();
       event.stopImmediatePropagation();
       try {
-        register(
-          byId('registerName')?.value,
-          byId('registerEmail')?.value,
-          byId('registerPassword')?.value,
-          byId('registerPassword2')?.value
-        );
+        register(byId('registerName')?.value, byId('registerEmail')?.value, byId('registerPassword')?.value, byId('registerPassword2')?.value);
       } catch (error) {
         setMessage(error.message || 'Não foi possível criar a conta.', true);
       }
@@ -285,9 +269,6 @@
     }
   }
 
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', initialize, { once: true });
-  } else {
-    initialize();
-  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', initialize, { once: true });
+  else initialize();
 })();
