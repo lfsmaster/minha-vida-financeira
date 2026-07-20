@@ -5,25 +5,25 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="theme-color" content="#10213d">
 <title>Minha Vida Financeira</title>
-<link rel="stylesheet" href="clock.css?v=3">
+<link rel="stylesheet" href="clock.css?v=4">
 </head>
 <body>
 <section id="authScreen" class="auth">
   <div class="auth-card">
     <div class="auth-brand"><div class="logo">MV</div><div><h1 style="margin:0">Minha Vida Financeira</h1><small>Gestão integrada de ponta a ponta</small></div></div>
     <form id="loginForm" class="form">
-      <label class="field">E-mail<input id="loginEmail" type="email" required></label>
-      <label class="field">Senha<input id="loginPassword" type="password" minlength="4" required></label>
-      <button class="btn primary">Entrar</button>
+      <label class="field">E-mail<input id="loginEmail" type="email" autocomplete="email" required></label>
+      <label class="field">Senha<input id="loginPassword" type="password" autocomplete="current-password" minlength="4" required></label>
+      <button class="btn primary" type="submit">Entrar</button>
       <button type="button" class="link" id="showRegister">Criar conta local</button>
     </form>
     <form id="registerForm" class="form hidden">
-      <label class="field">Nome<input id="registerName" required></label>
-      <label class="field">E-mail<input id="registerEmail" type="email" required></label>
-      <label class="field">Senha<input id="registerPassword" type="password" minlength="4" required></label>
-      <label class="field">Confirmar senha<input id="registerPassword2" type="password" minlength="4" required></label>
-      <button class="btn primary">Criar conta</button>
-      <button type="button" class="link" id="showLogin">Voltar</button>
+      <label class="field">Nome<input id="registerName" autocomplete="name" required></label>
+      <label class="field">E-mail<input id="registerEmail" type="email" autocomplete="email" required></label>
+      <label class="field">Senha<input id="registerPassword" type="password" autocomplete="new-password" minlength="4" required></label>
+      <label class="field">Confirmar senha<input id="registerPassword2" type="password" autocomplete="new-password" minlength="4" required></label>
+      <button class="btn primary" type="submit">Criar conta e entrar</button>
+      <button type="button" class="link" id="showLogin">Voltar para o login</button>
     </form>
     <p id="authMessage" class="muted small" style="margin:12px 0 0"></p>
   </div>
@@ -47,11 +47,12 @@
 <div id="modalBack" class="modal-back"><div class="modal"><h2 id="modalTitle"></h2><form id="modalForm" class="form two"></form><div class="actions" style="margin-top:16px"><button id="modalCancel" class="btn" type="button">Cancelar</button><button class="btn primary" type="submit" form="modalForm">Salvar</button></div></div></div>
 <input id="restoreFile" type="file" accept="application/json" hidden>
 <div id="toast" class="toast"></div>
-<script src="clock-core.js?v=3"></script>
-<script src="clock-ui.js?v=3"></script>
-<script src="clock-pages-main.js?v=3"></script>
-<script src="clock-pages-plan.js?v=3"></script>
-<script src="clock-pages-tools.js?v=3"></script>
-<script src="clock-actions.js?v=3"></script>
+<script src="clock-core.js?v=4"></script>
+<script src="clock-ui.js?v=4"></script>
+<script src="clock-pages-main.js?v=4"></script>
+<script src="clock-pages-plan.js?v=4"></script>
+<script src="clock-pages-tools.js?v=4"></script>
+<script src="clock-actions.js?v=4"></script>
+<script src="auth-fix.js?v=4"></script>
 </body>
 </html>
