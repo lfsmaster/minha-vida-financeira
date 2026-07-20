@@ -3,19 +3,48 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#10213d">
 <title>Minha Vida Financeira</title>
 <style>
-*{box-sizing:border-box}html,body{margin:0;height:100%;font-family:Inter,system-ui,sans-serif;background:#f4f7fb}.bar{height:64px;background:#10213d;color:#fff;display:flex;align-items:center;justify-content:space-between;padding:10px 18px;gap:12px;box-shadow:0 3px 14px rgba(0,0,0,.18)}.brand{font-weight:900}.actions{display:flex;gap:8px;flex-wrap:wrap}.btn{border:1px solid rgba(255,255,255,.22);background:#fff;color:#172033;padding:10px 14px;border-radius:10px;font-weight:800;text-decoration:none;cursor:pointer}.btn.primary{background:#155eef;border-color:#155eef;color:#fff}.frame{width:100%;height:calc(100% - 64px);border:0;display:block}@media(max-width:620px){.bar{height:auto;min-height:72px;align-items:flex-start}.brand{padding-top:10px}.actions{justify-content:flex-end}.btn{padding:9px 10px;font-size:12px}.frame{height:calc(100% - 82px)}}
+*{box-sizing:border-box}html,body{margin:0;height:100%;font-family:Inter,system-ui,-apple-system,Segoe UI,sans-serif;background:#f4f7fb;color:#172033}.shell{height:100%;display:grid;grid-template-rows:auto 1fr}.bar{background:#10213d;color:#fff;padding:10px 16px;display:flex;align-items:center;justify-content:space-between;gap:14px;box-shadow:0 3px 14px rgba(0,0,0,.2);z-index:5}.brand{display:flex;align-items:center;gap:10px;min-width:190px}.mark{width:38px;height:38px;border-radius:12px;background:#155eef;display:grid;place-items:center;font-weight:900}.brand strong{display:block}.brand small{display:block;color:#aebdd2;font-size:11px}.nav{display:flex;gap:7px;flex-wrap:wrap;justify-content:flex-end}.btn{border:1px solid rgba(255,255,255,.22);background:#fff;color:#172033;padding:9px 12px;border-radius:10px;font-weight:800;text-decoration:none;cursor:pointer}.btn.primary{background:#155eef;border-color:#155eef;color:#fff}.btn.ghost{background:transparent;color:#dce6f5}.btn.active{outline:2px solid #8bb4ff}.content{position:relative;min-height:0}.frame{width:100%;height:100%;border:0;display:block;background:#f4f7fb}.loading{position:absolute;inset:0;background:rgba(244,247,251,.86);display:none;place-items:center;font-weight:800;color:#36527c;z-index:3}.loading.show{display:grid}.status{position:fixed;right:16px;bottom:16px;background:#10213d;color:#fff;padding:11px 14px;border-radius:11px;opacity:0;transform:translateY(8px);transition:.2s;pointer-events:none;z-index:20}.status.show{opacity:1;transform:none}@media(max-width:760px){.bar{align-items:flex-start;flex-direction:column}.brand{min-width:0}.nav{width:100%;justify-content:flex-start}.btn{font-size:12px;padding:8px 9px}.shell{grid-template-rows:auto 1fr}}
 </style>
 </head>
 <body>
+<div class="shell">
 <header class="bar">
-<div class="brand">Minha Vida Financeira</div>
-<div class="actions">
-<a class="btn primary" href="importar.html">⬆ Importar CSV/OFX</a>
-<a class="btn" href="index.html" target="appFrame">Atualizar sistema</a>
-</div>
+  <div class="brand"><div class="mark">MV</div><div><strong>Minha Vida Financeira</strong><small>Todos os módulos integrados</small></div></div>
+  <nav class="nav">
+    <button id="openSystem" class="btn primary active" type="button">Sistema completo</button>
+    <button id="openImport" class="btn" type="button">Importar CSV/OFX</button>
+    <button id="refreshSystem" class="btn ghost" type="button">Atualizar dados</button>
+    <button id="openReports" class="btn ghost" type="button">Relatórios e extrato</button>
+  </nav>
 </header>
-<iframe class="frame" name="appFrame" src="index.html" title="Sistema Minha Vida Financeira"></iframe>
+<main class="content">
+  <div id="loading" class="loading">Atualizando todos os módulos…</div>
+  <iframe id="appFrame" class="frame" src="index.html" title="Sistema Minha Vida Financeira"></iframe>
+</main>
+</div>
+<div id="status" class="status"></div>
+<script>
+(function(){
+'use strict';
+const frame=document.getElementById('appFrame');
+const loading=document.getElementById('loading');
+const status=document.getElementById('status');
+const systemButton=document.getElementById('openSystem');
+const importButton=document.getElementById('openImport');
+function notify(text){status.textContent=text;status.classList.add('show');setTimeout(()=>status.classList.remove('show'),2300)}
+function active(mode){systemButton.classList.toggle('active',mode==='system');importButton.classList.toggle('active',mode==='import')}
+function navigate(url,mode){loading.classList.add('show');active(mode);frame.src=url}
+frame.addEventListener('load',()=>{loading.classList.remove('show');const isImport=frame.contentWindow.location.pathname.endsWith('/importar.html');active(isImport?'import':'system')});
+document.getElementById('openSystem').onclick=()=>navigate('index.html','system');
+document.getElementById('openImport').onclick=()=>navigate('importar.html','import');
+document.getElementById('refreshSystem').onclick=()=>{navigate('index.html?refresh='+Date.now(),'system');notify('Saldos, relatórios e módulos atualizados.')};
+document.getElementById('openReports').onclick=()=>{navigate('index.html?section=reports&refresh='+Date.now(),'system');notify('Abra “Relatórios e extrato” no menu lateral.')};
+window.addEventListener('storage',event=>{if(event.key==='mvf_complete_v2'&&frame.contentWindow.location.pathname.endsWith('/index.html')){frame.contentWindow.location.reload();notify('Dados financeiros sincronizados.')}});
+window.addEventListener('message',event=>{if(event.data&&event.data.type==='finance-data-updated'){navigate('index.html?refresh='+Date.now(),'system');notify('Importação concluída e módulos recalculados.')}});
+})();
+</script>
 </body>
 </html>
