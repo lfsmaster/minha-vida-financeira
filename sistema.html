@@ -46,6 +46,6 @@ window.addEventListener('storage',event=>{if(event.key==='mvf_complete_v2'){setT
 window.addEventListener('message',event=>{if(event.data&&event.data.type==='finance-data-updated'){navigate('index.html?refresh='+Date.now(),'system');notify('Importação concluída. Saldos recalculados.')}});
 })();
 </script>
-<script src="balance-sync.js"></script>
+<script src="balance-engine.js"></script>
 </body>
 </html>
