@@ -96,7 +96,34 @@ function removeSalaryRule(id){const rules=readRules();rules.salaryPayers=rules.s
 
 function persistMetadata(itemsByAccount){
  const database=App.Core.getState();const transactions=database.transactions;
- itemsByAccount.forEach(({accountId,items})=>items.forEach(item=>{const match=transactions.find(transaction=>transaction.accountId===accountId&&(!transaction._importMetadataApplied)&&((item.externalId&&transaction.externalId===item.externalId)||(String(transaction.date).slice(0,10)===item.date&&normalize(transaction.description)===normalize(item.description)&&Math.abs(Number(transaction.amount||0))===Math.abs(Number(item.amount||0)))));if(!match)return;match.transferMethod=item.method;match.transferDirection=item.direction;match.transferClassification=item.classification;match.counterparty=item.counterparty;match.salaryPayer=item.salaryPayer||'';match.recurringType=item.recurringType||'';match.sourceFile=item.sourceFile||'';match._importMetadataApplied=true}));
+ const transactionsById = new Map();
+ const transactionsBySig = new Map();
+ transactions.forEach(transaction => {
+  const { accountId, externalId, date, description, amount } = transaction;
+  if (externalId) {
+   const keyId = `${accountId}|${externalId}`;
+   if (!transactionsById.has(keyId)) transactionsById.set(keyId, []);
+   transactionsById.get(keyId).push(transaction);
+  }
+  const keySig = `${accountId}|${String(date||'').slice(0,10)}|${normalize(description)}|${Math.abs(Number(amount||0))}`;
+  if (!transactionsBySig.has(keySig)) transactionsBySig.set(keySig, []);
+  transactionsBySig.get(keySig).push(transaction);
+ });
+ itemsByAccount.forEach(({accountId,items})=>items.forEach(item=>{
+  let match = null;
+  if (item.externalId) {
+   const keyId = `${accountId}|${item.externalId}`;
+   const candidates = transactionsById.get(keyId);
+   if (candidates) match = candidates.find(t => !t._importMetadataApplied);
+  }
+  if (!match) {
+   const keySig = `${accountId}|${item.date}|${normalize(item.description)}|${Math.abs(Number(item.amount||0))}`;
+   const candidates = transactionsBySig.get(keySig);
+   if (candidates) match = candidates.find(t => !t._importMetadataApplied);
+  }
+  if(!match)return;
+  match.transferMethod=item.method;match.transferDirection=item.direction;match.transferClassification=item.classification;match.counterparty=item.counterparty;match.salaryPayer=item.salaryPayer||'';match.recurringType=item.recurringType||'';match.sourceFile=item.sourceFile||'';match._importMetadataApplied=true;
+ }));
  transactions.forEach(transaction=>{if(transaction._importMetadataApplied)delete transaction._importMetadataApplied});database.meta=database.meta||{};database.meta.revision=Number(database.meta.revision||0)+1;database.meta.updatedAt=new Date().toISOString();database.meta.lastEvent='Extratos classificados e integrados';localStorage.setItem(App.Core.KEY,JSON.stringify(database));window.dispatchEvent(new CustomEvent('mvf:changed',{detail:{event:database.meta.lastEvent,revision:database.meta.revision}}));
 }
 
