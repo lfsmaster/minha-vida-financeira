@@ -10,6 +10,7 @@
     `clock-pages-main.js?v=${VERSION}`,
     `clock-pages-plan.js?v=${VERSION}`,
     `clock-pages-tools.js?v=${VERSION}`,
+    `parser-utils.js?v=${VERSION}`,
     `clock-actions.js?v=${VERSION}`,
     `import-batch-core.js?v=${VERSION}`,
     `import-batch-ui.js?v=${VERSION}`,
