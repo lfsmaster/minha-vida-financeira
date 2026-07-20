@@ -30,7 +30,7 @@ function splitCSVLine(line,delimiter){
  output.push(current.trim());return output;
 }
 
-function headerIndex(headers,names){const normalized=headers.map(normalize);for(const name of names){const index=normalized.findIndex(header=>header.includes(name));if(index>=0)return index}return-1}
+function headerIndex(normalized,names){for(const name of names){const index=normalized.findIndex(header=>header.includes(name));if(index>=0)return index}return-1}
 function ofxTag(block,name){return(block.match(new RegExp(`<${name}>([^<\\r\\n]+)`,'i'))||[])[1]?.trim()||''}
 
 function detectMethod(description,bankType=''){
@@ -69,7 +69,7 @@ function decorate(item,accountId=''){
 function parseCSV(text,fileName,accountId=''){
  const lines=text.replace(/^\uFEFF/,'').split(/\r?\n/).filter(line=>line.trim());if(lines.length<2)throw new Error('CSV sem registros.');
  const delimiter=[';',',','\t'].sort((a,b)=>lines[0].split(b).length-lines[0].split(a).length)[0];const headers=splitCSVLine(lines[0],delimiter);
- const dateIndex=headerIndex(headers,['data','date']);const descriptionIndex=headerIndex(headers,['descricao','historico','lancamento','memo','detalhe','nome']);const valueIndex=headerIndex(headers,['valor','amount','montante']);const creditIndex=headerIndex(headers,['credito','entrada','credit']);const debitIndex=headerIndex(headers,['debito','saida','debit']);const idIndex=headerIndex(headers,['fitid','identificador','documento','id']);const nameIndex=headerIndex(headers,['favorecido','pagador','beneficiario','contraparte','nome']);
+ const normalized=headers.map(normalize);const dateIndex=headerIndex(normalized,['data','date']);const descriptionIndex=headerIndex(normalized,['descricao','historico','lancamento','memo','detalhe','nome']);const valueIndex=headerIndex(normalized,['valor','amount','montante']);const creditIndex=headerIndex(normalized,['credito','entrada','credit']);const debitIndex=headerIndex(normalized,['debito','saida','debit']);const idIndex=headerIndex(normalized,['fitid','identificador','documento','id']);const nameIndex=headerIndex(normalized,['favorecido','pagador','beneficiario','contraparte','nome']);
  if(dateIndex<0||descriptionIndex<0||(valueIndex<0&&creditIndex<0&&debitIndex<0))throw new Error('Não foi possível identificar data, descrição e valor.');
  return lines.slice(1).map((line,rowIndex)=>{const columns=splitCSVLine(line,delimiter);const amount=valueIndex>=0?parseAmount(columns[valueIndex]):Math.abs(parseAmount(columns[creditIndex]))-Math.abs(parseAmount(columns[debitIndex]));return decorate({date:normalizeDate(columns[dateIndex]),description:columns[descriptionIndex]||'Movimentação bancária',amount,externalId:idIndex>=0?String(columns[idIndex]||'').trim():'',bankName:nameIndex>=0?columns[nameIndex]:'',sourceFile:fileName,sourceRow:rowIndex+2},accountId)}).filter(item=>item.date&&item.amount!==0);
 }
