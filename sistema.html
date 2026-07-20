@@ -6,7 +6,7 @@
 <meta name="theme-color" content="#10213d">
 <title>Minha Vida Financeira</title>
 <style>
-*{box-sizing:border-box}html,body{margin:0;height:100%;font-family:Inter,system-ui,-apple-system,Segoe UI,sans-serif;background:#f4f7fb;color:#172033}.shell{height:100%;display:grid;grid-template-rows:auto 1fr}.bar{background:#10213d;color:#fff;padding:10px 16px;display:flex;align-items:center;justify-content:space-between;gap:14px;box-shadow:0 3px 14px rgba(0,0,0,.2);z-index:5}.brand{display:flex;align-items:center;gap:10px;min-width:220px}.mark{width:38px;height:38px;border-radius:12px;background:#155eef;display:grid;place-items:center;font-weight:900}.brand strong{display:block}.brand small{display:block;color:#aebdd2;font-size:11px}.nav{display:flex;gap:7px;flex-wrap:wrap;justify-content:flex-end}.btn{border:1px solid rgba(255,255,255,.22);background:#fff;color:#172033;padding:9px 12px;border-radius:10px;font-weight:800;text-decoration:none;cursor:pointer}.btn.primary{background:#155eef;border-color:#155eef;color:#fff}.btn.ghost{background:transparent;color:#dce6f5}.btn.active{outline:2px solid #8bb4ff}.content{position:relative;min-height:0}.frame{width:100%;height:100%;border:0;display:block;background:#f4f7fb}.loading{position:absolute;inset:0;background:rgba(244,247,251,.86);display:none;place-items:center;font-weight:800;color:#36527c;z-index:3}.loading.show{display:grid}.status{position:fixed;right:16px;bottom:16px;background:#10213d;color:#fff;padding:11px 14px;border-radius:11px;opacity:0;transform:translateY(8px);transition:.2s;pointer-events:none;z-index:20}.status.show{opacity:1;transform:none}#balanceStatus[data-state=ok]{color:#81e6b4}@media(max-width:760px){.bar{align-items:flex-start;flex-direction:column}.brand{min-width:0}.nav{width:100%;justify-content:flex-start}.btn{font-size:12px;padding:8px 9px}.shell{grid-template-rows:auto 1fr}}
+*{box-sizing:border-box}html,body{margin:0;height:100%;font-family:Inter,system-ui,-apple-system,Segoe UI,sans-serif;background:#f4f7fb;color:#172033}.shell{height:100%;display:grid;grid-template-rows:auto 1fr}.bar{background:#10213d;color:#fff;padding:10px 16px;display:flex;align-items:center;justify-content:space-between;gap:14px;box-shadow:0 3px 14px rgba(0,0,0,.2);z-index:5}.brand{display:flex;align-items:center;gap:10px;min-width:220px}.mark{width:38px;height:38px;border-radius:12px;background:#155eef;display:grid;place-items:center;font-weight:900}.brand strong{display:block}.brand small{display:block;color:#aebdd2;font-size:11px}.nav{display:flex;gap:7px;flex-wrap:wrap;justify-content:flex-end}.btn{border:1px solid rgba(255,255,255,.22);background:#fff;color:#172033;padding:9px 12px;border-radius:10px;font-weight:800;text-decoration:none;cursor:pointer}.btn.primary{background:#155eef;border-color:#155eef;color:#fff}.btn.health{background:#16875f;border-color:#16875f;color:#fff}.btn.ghost{background:transparent;color:#dce6f5}.btn.active{outline:2px solid #8bb4ff}.content{position:relative;min-height:0}.frame{width:100%;height:100%;border:0;display:block;background:#f4f7fb}.loading{position:absolute;inset:0;background:rgba(244,247,251,.86);display:none;place-items:center;font-weight:800;color:#36527c;z-index:3}.loading.show{display:grid}.status{position:fixed;right:16px;bottom:16px;background:#10213d;color:#fff;padding:11px 14px;border-radius:11px;opacity:0;transform:translateY(8px);transition:.2s;pointer-events:none;z-index:20}.status.show{opacity:1;transform:none}#balanceStatus[data-state=ok]{color:#81e6b4}@media(max-width:760px){.bar{align-items:flex-start;flex-direction:column}.brand{min-width:0}.nav{width:100%;justify-content:flex-start}.btn{font-size:12px;padding:8px 9px}.shell{grid-template-rows:auto 1fr}}
 </style>
 </head>
 <body>
@@ -15,13 +15,14 @@
   <div class="brand"><div class="mark">MV</div><div><strong>Minha Vida Financeira</strong><small id="balanceStatus">Calculando saldos…</small></div></div>
   <nav class="nav">
     <button id="openSystem" class="btn primary active" type="button">Sistema completo</button>
+    <button id="openHealth" class="btn health" type="button">Saúde financeira</button>
     <button id="openImport" class="btn" type="button">Importar CSV/OFX</button>
     <button id="refreshSystem" class="btn ghost" type="button">Recalcular saldos</button>
     <button id="openReports" class="btn ghost" type="button">Relatórios e extrato</button>
   </nav>
 </header>
 <main class="content">
-  <div id="loading" class="loading">Recalculando contas, saldos e relatórios…</div>
+  <div id="loading" class="loading">Recalculando contas, saldos e indicadores…</div>
   <iframe id="appFrame" class="frame" src="index.html" title="Sistema Minha Vida Financeira"></iframe>
 </main>
 </div>
@@ -33,19 +34,22 @@ const frame=document.getElementById('appFrame');
 const loading=document.getElementById('loading');
 const status=document.getElementById('status');
 const systemButton=document.getElementById('openSystem');
+const healthButton=document.getElementById('openHealth');
 const importButton=document.getElementById('openImport');
 function notify(text){status.textContent=text;status.classList.add('show');setTimeout(()=>status.classList.remove('show'),2300)}
-function active(mode){systemButton.classList.toggle('active',mode==='system');importButton.classList.toggle('active',mode==='import')}
+function active(mode){systemButton.classList.toggle('active',mode==='system');healthButton.classList.toggle('active',mode==='health');importButton.classList.toggle('active',mode==='import')}
 function navigate(url,mode){loading.classList.add('show');active(mode);frame.src=url}
-frame.addEventListener('load',()=>{loading.classList.remove('show');let isImport=false;try{isImport=frame.contentWindow.location.pathname.endsWith('/importar.html')}catch(e){}active(isImport?'import':'system');setTimeout(()=>window.MVFBalance&&window.MVFBalance.update(),80)});
+frame.addEventListener('load',()=>{loading.classList.remove('show');let isImport=false;try{isImport=frame.contentWindow.location.pathname.endsWith('/importar.html')}catch(e){}if(isImport)active('import');else if(new URL(frame.src,location.href).searchParams.get('section')==='financial-health')active('health');else active('system');setTimeout(()=>window.MVFBalance&&window.MVFBalance.update(),80);setTimeout(()=>window.MVFEducation&&window.MVFEducation.update(),180)});
 document.getElementById('openSystem').onclick=()=>navigate('index.html','system');
+document.getElementById('openHealth').onclick=()=>{active('health');if(window.MVFEducation)window.MVFEducation.open();else navigate('index.html?section=financial-health&refresh='+Date.now(),'health')};
 document.getElementById('openImport').onclick=()=>navigate('importar.html','import');
-document.getElementById('refreshSystem').onclick=()=>{if(window.MVFBalance)window.MVFBalance.update();navigate('index.html?refresh='+Date.now(),'system');notify('Entradas, saídas e saldos recalculados.')};
+document.getElementById('refreshSystem').onclick=()=>{if(window.MVFBalance)window.MVFBalance.update();if(window.MVFEducation)window.MVFEducation.update();navigate('index.html?refresh='+Date.now(),'system');notify('Entradas, saídas, saldos e indicadores recalculados.')};
 document.getElementById('openReports').onclick=()=>{navigate('index.html?section=reports&refresh='+Date.now(),'system');notify('Relatórios atualizados com o saldo calculado.')};
-window.addEventListener('storage',event=>{if(event.key==='mvf_complete_v2'){setTimeout(()=>window.MVFBalance&&window.MVFBalance.update(),50)}});
-window.addEventListener('message',event=>{if(event.data&&event.data.type==='finance-data-updated'){navigate('index.html?refresh='+Date.now(),'system');notify('Importação concluída. Saldos recalculados.')}});
+window.addEventListener('storage',event=>{if(event.key==='mvf_complete_v2'){setTimeout(()=>window.MVFBalance&&window.MVFBalance.update(),50);setTimeout(()=>window.MVFEducation&&window.MVFEducation.update(),120)}});
+window.addEventListener('message',event=>{if(event.data&&event.data.type==='finance-data-updated'){navigate('index.html?refresh='+Date.now(),'system');notify('Importação concluída. Saldos e saúde financeira recalculados.')}});
 })();
 </script>
 <script src="balance-engine.js"></script>
+<script src="educacao-financeira.js"></script>
 </body>
 </html>
