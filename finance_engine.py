@@ -120,17 +120,23 @@ def _projected_available(state: Mapping[str, Any]) -> float:
     return projected - _all_open_cards(state)
 
 
-def _goal_current(state: Mapping[str, Any], goal_id: str) -> float:
+def _goal_current(state: Mapping[str, Any], goal_id: str, allocations_map: Dict[str, float] = None) -> float:
     goal = next((item for item in _items(state, "goals") if _text(item.get("id")) == _text(goal_id)), None)
     base = _amount((goal or {}).get("baseAmount", (goal or {}).get("current", (goal or {}).get("saved", (goal or {}).get("accumulated", 0)))))
-    contributions = sum(_amount(transaction.get("amount")) for transaction in _items(state, "transactions") if _kind(transaction) == "allocation" and _normalize(transaction.get("targetType")) == "goal" and _text(transaction.get("targetId")) == _text(goal_id) and _is_paid(transaction))
+    if allocations_map is not None:
+        contributions = allocations_map.get(f"goal_{_text(goal_id)}", 0.0)
+    else:
+        contributions = sum(_amount(transaction.get("amount")) for transaction in _items(state, "transactions") if _kind(transaction) == "allocation" and _normalize(transaction.get("targetType")) == "goal" and _text(transaction.get("targetId")) == _text(goal_id) and _is_paid(transaction))
     return base + contributions
 
 
-def _investment_current(state: Mapping[str, Any], investment_id: str) -> float:
+def _investment_current(state: Mapping[str, Any], investment_id: str, allocations_map: Dict[str, float] = None) -> float:
     investment = next((item for item in _items(state, "investments") if _text(item.get("id")) == _text(investment_id)), None)
     base = _amount((investment or {}).get("baseAmount", (investment or {}).get("current", (investment or {}).get("currentValue", (investment or {}).get("value", (investment or {}).get("balance", (investment or {}).get("amount", 0)))))))
-    contributions = sum(_amount(transaction.get("amount")) for transaction in _items(state, "transactions") if _kind(transaction) == "allocation" and _normalize(transaction.get("targetType")) == "investment" and _text(transaction.get("targetId")) == _text(investment_id) and _is_paid(transaction))
+    if allocations_map is not None:
+        contributions = allocations_map.get(f"investment_{_text(investment_id)}", 0.0)
+    else:
+        contributions = sum(_amount(transaction.get("amount")) for transaction in _items(state, "transactions") if _kind(transaction) == "allocation" and _normalize(transaction.get("targetType")) == "investment" and _text(transaction.get("targetId")) == _text(investment_id) and _is_paid(transaction))
     return base + contributions
 
 
@@ -215,9 +221,21 @@ def _previous_months(month: str, count: int = 3) -> Iterable[str]:
         yield f"{value // 12:04d}-{value % 12 + 1:02d}"
 
 
+def _build_allocations_map(state: Mapping[str, Any]) -> Dict[str, float]:
+    allocations_map = {}
+    for transaction in _items(state, "transactions"):
+        if _kind(transaction) == "allocation" and _is_paid(transaction):
+            target_type = _normalize(transaction.get("targetType"))
+            target_id = _text(transaction.get("targetId"))
+            key = f"{target_type}_{target_id}"
+            allocations_map[key] = allocations_map.get(key, 0.0) + _amount(transaction.get("amount"))
+    return allocations_map
+
+
 def _reserve_amount(state: Mapping[str, Any]) -> float:
-    goal_reserve = sum(_goal_current(state, _text(goal.get("id"))) for goal in _items(state, "goals") if "reserva" in _normalize(f"{goal.get('name', '')} {goal.get('category', '')}") or "emergencia" in _normalize(f"{goal.get('name', '')} {goal.get('category', '')}"))
-    investment_reserve = sum(_investment_current(state, _text(investment.get("id"))) for investment in _items(state, "investments") if bool(investment.get("emergencyReserve")) or "reserva" in _normalize(f"{investment.get('name', '')} {investment.get('type', '')}") or "emergencia" in _normalize(f"{investment.get('name', '')} {investment.get('type', '')}"))
+    allocations_map = _build_allocations_map(state)
+    goal_reserve = sum(_goal_current(state, _text(goal.get("id")), allocations_map) for goal in _items(state, "goals") if "reserva" in _normalize(f"{goal.get('name', '')} {goal.get('category', '')}") or "emergencia" in _normalize(f"{goal.get('name', '')} {goal.get('category', '')}"))
+    investment_reserve = sum(_investment_current(state, _text(investment.get("id")), allocations_map) for investment in _items(state, "investments") if bool(investment.get("emergencyReserve")) or "reserva" in _normalize(f"{investment.get('name', '')} {investment.get('type', '')}") or "emergencia" in _normalize(f"{investment.get('name', '')} {investment.get('type', '')}"))
     return goal_reserve + investment_reserve
 
 
