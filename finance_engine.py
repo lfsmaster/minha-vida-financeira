@@ -134,12 +134,15 @@ def _investment_current(state: Mapping[str, Any], investment_id: str) -> float:
     return base + contributions
 
 
-def _debt_balance(state: Mapping[str, Any], debt_id: str) -> float:
+def _debt_balance(state: Mapping[str, Any], debt_id: str, _payments_cache: Dict[str, float] | None = None) -> float:
     debt = next((item for item in _items(state, "debts") if _text(item.get("id")) == _text(debt_id)), None)
     if not debt:
         return 0.0
     original = _amount(debt.get("originalBalance", debt.get("remaining", debt.get("balance", debt.get("outstanding", debt.get("amount", 0))))))
-    paid = sum(_amount(transaction.get("amount")) for transaction in _items(state, "transactions") if _kind(transaction) == "debt_payment" and _text(transaction.get("debtId")) == _text(debt_id) and _is_paid(transaction))
+    if _payments_cache is not None:
+        paid = _payments_cache.get(_text(debt_id), 0.0)
+    else:
+        paid = sum(_amount(transaction.get("amount")) for transaction in _items(state, "transactions") if _kind(transaction) == "debt_payment" and _text(transaction.get("debtId")) == _text(debt_id) and _is_paid(transaction))
     return max(0.0, original - paid)
 
 
@@ -194,7 +197,14 @@ def _net_worth(state: Mapping[str, Any]) -> Dict[str, float]:
     goals = sum(_goal_current(state, _text(goal.get("id"))) for goal in _items(state, "goals"))
     investments = sum(_investment_current(state, _text(investment.get("id"))) for investment in _items(state, "investments"))
     assets = sum(_amount(asset.get("value", asset.get("amount"))) for asset in _items(state, "assets"))
-    debts = sum(_debt_balance(state, _text(debt.get("id"))) for debt in _items(state, "debts"))
+
+    payments_cache: Dict[str, float] = {}
+    for tx in _items(state, "transactions"):
+        if _kind(tx) == "debt_payment" and _is_paid(tx):
+            did = _text(tx.get("debtId"))
+            payments_cache[did] = payments_cache.get(did, 0.0) + _amount(tx.get("amount"))
+
+    debts = sum(_debt_balance(state, _text(debt.get("id")), payments_cache) for debt in _items(state, "debts"))
     liquid = cash + goals + investments - debts
     return {"cash": cash, "goals": goals, "investments": investments, "assets": assets, "debts": debts, "liquid": liquid, "total": liquid + assets}
 
