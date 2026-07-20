@@ -1,37 +1,12 @@
 (function (App) {
 'use strict';
 if (!App || !App.Core) return;
+const { normalize, normalizeDate, parseAmount, splitCSVLine, headerIndex, ofxTag } = App.ParserUtils;
 
 const RULES_KEY='mvf_import_rules_v1';
-const normalize=value=>String(value==null?'':value).trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
 const uid=(prefix='id')=>`${prefix}_${Date.now()}_${Math.random().toString(36).slice(2,9)}`;
 const readRules=()=>{try{const data=JSON.parse(localStorage.getItem(RULES_KEY)||'{}');return{salaryPayers:Array.isArray(data.salaryPayers)?data.salaryPayers:[]}}catch(error){return{salaryPayers:[]}}};
 const saveRules=rules=>localStorage.setItem(RULES_KEY,JSON.stringify(rules));
-
-function normalizeDate(value){
- const text=String(value||'').trim();let match;
- if((match=text.match(/^(\d{4})[-\/.](\d{1,2})[-\/.](\d{1,2})/)))return`${match[1]}-${match[2].padStart(2,'0')}-${match[3].padStart(2,'0')}`;
- if((match=text.match(/^(\d{1,2})[\/.-](\d{1,2})[\/.-](\d{2,4})/))){const year=match[3].length===2?`20${match[3]}`:match[3];return`${year}-${match[2].padStart(2,'0')}-${match[1].padStart(2,'0')}`}
- if((match=text.match(/^(\d{4})(\d{2})(\d{2})/)))return`${match[1]}-${match[2]}-${match[3]}`;
- return'';
-}
-
-function parseAmount(value){
- let text=String(value==null?'':value).trim().replace(/R\$|\s/g,'');if(!text)return 0;
- const negative=/^-|\(|\bD\b/i.test(text);text=text.replace(/[()A-Za-z]/g,'');
- if(text.includes(',')&&text.includes('.'))text=text.lastIndexOf(',')>text.lastIndexOf('.')?text.replace(/\./g,'').replace(',','.'):text.replace(/,/g,'');
- else if(text.includes(','))text=text.replace(/\./g,'').replace(',','.');
- const amount=Math.abs(Number(text)||0);return negative?-amount:amount;
-}
-
-function splitCSVLine(line,delimiter){
- const output=[];let current='',quoted=false;
- for(let index=0;index<line.length;index+=1){const char=line[index];if(char==='"'){if(quoted&&line[index+1]==='"'){current+='"';index+=1}else quoted=!quoted}else if(char===delimiter&&!quoted){output.push(current.trim());current=''}else current+=char}
- output.push(current.trim());return output;
-}
-
-function headerIndex(headers,names){const normalized=headers.map(normalize);for(const name of names){const index=normalized.findIndex(header=>header.includes(name));if(index>=0)return index}return-1}
-function ofxTag(block,name){return(block.match(new RegExp(`<${name}>([^<\\r\\n]+)`,'i'))||[])[1]?.trim()||''}
 
 function detectMethod(description,bankType=''){
  const value=normalize(`${description} ${bankType}`);
