@@ -57,32 +57,35 @@
     return Math.abs(numeric(transaction.amount ?? transaction.value ?? transaction.total));
   }
 
-  function accountBalanceFallback(account, transactions) {
-    const initial = numeric(account.initial ?? account.initialBalance ?? account.openingBalance ?? account.balanceInitial);
-    return transactions.reduce((balance, transaction) => {
-      if (!isSettled(transaction)) return balance;
-      const type = typeOf(transaction);
-      const amount = amountOf(transaction);
-      const accountId = String(transaction.accountId ?? transaction.account ?? '');
-      const target = String(account.id);
-      if (['income', 'receita', 'entrada', 'credit', 'credito'].includes(type) && accountId === target) return balance + amount;
-      if (['expense', 'despesa', 'saida', 'debit', 'debito'].includes(type) && accountId === target) return balance - amount;
-      if (['transfer', 'transferencia'].includes(type)) {
-        const from = String(transaction.fromAccountId ?? transaction.sourceAccountId ?? transaction.accountFromId ?? transaction.originAccountId ?? transaction.accountId ?? '');
-        const to = String(transaction.toAccountId ?? transaction.destinationAccountId ?? transaction.accountToId ?? transaction.targetAccountId ?? '');
-        if (from === target) balance -= amount;
-        if (to === target) balance += amount;
-      }
-      return balance;
-    }, initial);
-  }
-
   function accountBalances(data) {
     if (window.MVFBalance && typeof window.MVFBalance.calculate === 'function') {
       try { return window.MVFBalance.calculate(data); } catch (error) {}
     }
     const balances = new Map();
-    data.accounts.forEach(account => balances.set(String(account.id), accountBalanceFallback(account, data.transactions)));
+    data.accounts.forEach(account => {
+      const initial = numeric(account.initial ?? account.initialBalance ?? account.openingBalance ?? account.balanceInitial);
+      balances.set(String(account.id), initial);
+    });
+
+    data.transactions.forEach(transaction => {
+      if (!isSettled(transaction)) return;
+      const type = typeOf(transaction);
+      const amount = amountOf(transaction);
+
+      if (['income', 'receita', 'entrada', 'credit', 'credito'].includes(type)) {
+        const accountId = String(transaction.accountId ?? transaction.account ?? '');
+        if (balances.has(accountId)) balances.set(accountId, balances.get(accountId) + amount);
+      } else if (['expense', 'despesa', 'saida', 'debit', 'debito'].includes(type)) {
+        const accountId = String(transaction.accountId ?? transaction.account ?? '');
+        if (balances.has(accountId)) balances.set(accountId, balances.get(accountId) - amount);
+      } else if (['transfer', 'transferencia'].includes(type)) {
+        const from = String(transaction.fromAccountId ?? transaction.sourceAccountId ?? transaction.accountFromId ?? transaction.originAccountId ?? transaction.accountId ?? '');
+        const to = String(transaction.toAccountId ?? transaction.destinationAccountId ?? transaction.accountToId ?? transaction.targetAccountId ?? '');
+        if (balances.has(from)) balances.set(from, balances.get(from) - amount);
+        if (balances.has(to)) balances.set(to, balances.get(to) + amount);
+      }
+    });
+
     return { balances, totalBalance: Array.from(balances.values()).reduce((sum, value) => sum + value, 0) };
   }
 
