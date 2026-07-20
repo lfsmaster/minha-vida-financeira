@@ -99,7 +99,18 @@ def _total_available(state: Mapping[str, Any]) -> float:
 
 
 def _card_open_total(state: Mapping[str, Any], card_id: str) -> float:
-    return sum(_amount(purchase.get("amount", purchase.get("value"))) for purchase in _items(state, "cardPurchases") if _text(purchase.get("cardId")) == _text(card_id) and _normalize(purchase.get("status")) != "paid")
+    cache_key = "_cache_card_open_totals"
+    if isinstance(state, dict):
+        if cache_key not in state:
+            totals = {}
+            for purchase in _items(state, "cardPurchases"):
+                if _normalize(purchase.get("status")) != "paid":
+                    cid = _text(purchase.get("cardId"))
+                    totals[cid] = totals.get(cid, 0.0) + _amount(purchase.get("amount", purchase.get("value")))
+            state[cache_key] = totals
+        return state[cache_key].get(_text(card_id), 0.0)
+    else:
+        return sum(_amount(purchase.get("amount", purchase.get("value"))) for purchase in _items(state, "cardPurchases") if _text(purchase.get("cardId")) == _text(card_id) and _normalize(purchase.get("status")) != "paid")
 
 
 def _all_open_cards(state: Mapping[str, Any]) -> float:
