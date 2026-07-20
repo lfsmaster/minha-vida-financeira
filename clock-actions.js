@@ -1,7 +1,31 @@
 (function(App){
 'use strict';
 const {Core,$,state,toast,openModal,closeModal,formObject,accountOptions,cardOptions,categoryOptions,currentMonth}=App;
-function txFields(kind){return[{name:'date',label:'Data',type:'date',value:Core.today()},{name:'description',label:'Descrição',full:true},{name:'category',label:'Categoria',type:'select',options:categoryOptions(kind==='income'?'Renda extra':'Outros')},{name:'amount',label:'Valor',type:'number',min:.01,step:'.01'},{name:'accountId',label:'Conta',type:'select',options:accountOptions()},{name:'status',label:'Situação',type:'select',options:'<option value="paid">Realizado</option><option value="pending">Pendente</option>'}]}
+function txFields(kind) {
+  return [
+    { name: 'date', label: 'Data', type: 'date', value: Core.today() },
+    { name: 'description', label: 'Descrição', full: true },
+    {
+      name: 'category',
+      label: 'Categoria',
+      type: 'select',
+      options: categoryOptions(kind === 'income' ? 'Renda extra' : 'Outros')
+    },
+    { name: 'amount', label: 'Valor', type: 'number', min: 0.01, step: '.01' },
+    {
+      name: 'accountId',
+      label: 'Conta',
+      type: 'select',
+      options: accountOptions()
+    },
+    {
+      name: 'status',
+      label: 'Situação',
+      type: 'select',
+      options: '<option value="paid">Realizado</option><option value="pending">Pendente</option>'
+    }
+  ];
+}
 App.handleAction=(action,id)=>{try{
  if(action==='logout'){Core.logout();App.render();return}
  if(action==='add-income'||action==='add-expense'){const kind=action==='add-income'?'income':'expense';openModal(kind==='income'?'Nova receita':'Nova despesa',txFields(kind),data=>Core.dispatch('ADD_TRANSACTION',{...data,kind,amount:Number(data.amount)}));return}
