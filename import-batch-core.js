@@ -82,8 +82,14 @@ function parseOFX(text,fileName,accountId=''){
 function itemKey(item,accountId){const external=String(item.externalId||'').trim();if(external)return`${accountId}|id|${external}`;return`${accountId}|sig|${item.date}|${normalize(item.description)}|${Math.round(Number(item.amount||0)*100)}`}
 function transactionKey(transaction){const accountId=String(transaction.accountId||'');const external=String(transaction.externalId||transaction.importId||'').trim();const signed=(transaction.kind==='income'?1:-1)*Math.abs(Number(transaction.amount||0));if(external)return`${accountId}|id|${external}`;return`${accountId}|sig|${String(transaction.date||'').slice(0,10)}|${normalize(transaction.description)}|${Math.round(signed*100)}`}
 
+let _cachedTransactions=null;let _cachedExisting=null;
 function refreshDuplicates(batches){
- const existing=new Set(App.state().transactions.map(transactionKey));const seen=new Set();
+ const currentTransactions=App.state().transactions;
+ if(_cachedTransactions!==currentTransactions){
+  _cachedExisting=new Set(currentTransactions.map(transactionKey));
+  _cachedTransactions=currentTransactions;
+ }
+ const existing=_cachedExisting;const seen=new Set();
  batches.forEach(batch=>batch.items.forEach(item=>{applySalaryRule(item,batch.accountId);const key=itemKey(item,batch.accountId);item.duplicateExisting=existing.has(key);item.duplicateBatch=seen.has(key);if(!item.duplicateExisting&&!item.duplicateBatch)seen.add(key)}));
 }
 
