@@ -1,7 +1,7 @@
 (function () {
   'use strict';
 
-  const VERSION = '9';
+  const VERSION = '10';
   const PYODIDE_VERSION = '314.0.2';
   const PYODIDE_BASE = `https://cdn.jsdelivr.net/pyodide/v${PYODIDE_VERSION}/full/`;
   const APPLICATION_SCRIPTS = [
@@ -14,7 +14,8 @@
     `import-batch-core.js?v=${VERSION}`,
     `import-batch-ui.js?v=${VERSION}`,
     `import-batch-compat.js?v=${VERSION}`,
-    `auth-fix.js?v=${VERSION}`
+    `auth-fix.js?v=${VERSION}`,
+    `creative-design.js?v=${VERSION}`
   ];
 
   const boot = document.getElementById('pythonBoot');
@@ -116,7 +117,7 @@
       const engine = pyodide.pyimport('finance_engine');
 
       installPythonCalculations(pyodide, engine);
-      setBoot('Motor Python pronto', 'Abrindo o sistema integrado…');
+      setBoot('Motor Python pronto', 'Aplicando a identidade Creative Design…');
       await loadApplication();
       setEngineStatus('motor Python ativo', 'ok');
       if (boot) boot.remove();
